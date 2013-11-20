@@ -1,0 +1,19 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<script src="cfgSolver.js"></script>
+</head>
+<body>
+	<input type="text" id="textbox" />
+	<label id="label"/>
+</body>
+<script>
+	
+var input = document.getElementById("textbox");
+var resultLabel = document.getElementById("label");
+input.addEventListener("keydown", function () {
+	if (input.value.length)
+		resultLabel.innerText = CfgSolver.recognizer.recognizeWord(transformed, input.value);
+});
+</script>
+</html>
