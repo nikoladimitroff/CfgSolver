@@ -1,15 +1,6 @@
 ﻿var EPSILON = "ε";
 
-var grammar = {
-	"S": ["(S)", "E"],
-	"E": ["E*E", "E+E", "N"],
-	"N": ["NN", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
-};
 
-/*
-var grammar = {
-	"S": ["[S]", "{S}", "(S)", "()", "[]", "{}"]
-}*/
 /*
 var grammar = {
 	"E": ["T", "E+T"],
@@ -355,10 +346,10 @@ var CfgSolver = (function () {
 	})();
 	
 	return {
-		preprocessor: preprocessor,
-		recognizer: recognizer,		
+		printer: printer,
+		preprocess: preprocessor.transform,
+		recognizeWord: recognizer.recognizeWord,		
 	}
 })();
-var transformed = CfgSolver.preprocessor.transform(grammar);
 
 

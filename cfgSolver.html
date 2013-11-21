@@ -8,12 +8,18 @@
 	<label id="label"/>
 </body>
 <script>
-	
+var grammar = {
+	"S": ["(S)", "E"],
+	"E": ["E*E", "E+E", "N"],
+	"N": ["NN", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+};
+
+var transformed = CfgSolver.preprocess(grammar);
 var input = document.getElementById("textbox");
 var resultLabel = document.getElementById("label");
 input.addEventListener("keydown", function () {
 	if (input.value.length)
-		resultLabel.innerText = CfgSolver.recognizer.recognizeWord(transformed, input.value);
+		resultLabel.innerText = CfgSolver.recognizeWord(transformed, input.value);
 });
 </script>
 </html>
