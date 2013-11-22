@@ -1,5 +1,3 @@
-﻿var EPSILON = "ε";
-
 
 /*
 var grammar = {
@@ -9,7 +7,17 @@ var grammar = {
 	'I': ['0I', '1I', EPSILON],
 }*/
 
+
 var CfgSolver = (function () {
+	var EPSILON = "ε";
+	
+	// Create a new object, that prototypally inherits from the Error constructor.
+	function CfgError(message) {
+	  this.name = "CfgError";
+	  this.message = message || "Error solving grammar";
+	}
+	CfgError.prototype = new Error();
+	CfgError.prototype.constructor = CfgError;
 
 	var printer = (function () {
 		var STR_PAD_LEFT = 1;
@@ -17,13 +25,13 @@ var CfgSolver = (function () {
 		var STR_PAD_BOTH = 3;
 		// Pads string with a given character
 		function pad(str, len, pad, dir) {
-			if (typeof(len) == "undefined") { var len = 0; }
-			if (typeof(pad) == "undefined") { var pad = ' '; }
-			if (typeof(dir) == "undefined") { var dir = STR_PAD_RIGHT; }
+            len = len || 0;
+            pad = pad || ' ';
+            dir = dir || STR_PAD_LEFT;
 
 			if (len + 1 >= str.length) {
-				switch (dir){
-					case STR_PAD_LEFT:
+				switch (dir) {
+				    case STR_PAD_LEFT:
 						str = Array(len + 1 - str.length).join(pad) + str;
 					break;
 					case STR_PAD_BOTH:
@@ -108,7 +116,8 @@ var CfgSolver = (function () {
 					largestLetter = nonterminal.charCodeAt(0);
 				}
 				
-				for (var rhs in grammar[nonterminal]) {
+				for (var index in grammar[nonterminal]) {
+					var rhs = grammar[nonterminal][index];
 					for (var letter = 0; letter < rhs.length; letter++) {
 						if (rhs.charCodeAt(letter) > largestLetter) {
 							largestLetter = rhs.charCodeAt(letter);
@@ -119,14 +128,20 @@ var CfgSolver = (function () {
 			return largestLetter;
 		}
 
+		// Transforms the given grammar into a binary normal form (2nf)
 		var binTransform = function binTransform(grammar) {
+			// Find the largest character cited in a grammar rule and increment it by one so that can add new terminals
 			var largestLetter = incrementCharacter(findLargestCharacter(grammar));
 			var newGrammar = { };
+			// Loop trough all rules in the grammar
 			for (var nonterminal in grammar) {
 				newGrammar[nonterminal] = [];
 				for (var rhs in grammar[nonterminal]) {
-					if (grammar[nonterminal][rhs].length > 2) {
-						var left = grammar[nonterminal][rhs];
+					var rule = grammar[nonterminal][rhs];
+					if (rule.length > 2) {
+						// Take the leftmost substring of the word. 
+						// While it is longer than 2, remove the rightmost letter, add a new rule that simulates the current with a new nonterminal
+						var left = rule;
 						var currentNT = nonterminal;
 						while (left.length > 2) {
 							var newNonterminal = String.fromCharCode(largestLetter);
@@ -141,6 +156,7 @@ var CfgSolver = (function () {
 						}
 						newGrammar[currentNT] = [left];
 					}
+					// If the rule has length < 2, all is fine, return
 					else {
 						newGrammar[nonterminal].push(grammar[nonterminal][rhs]);
 					}
@@ -149,21 +165,21 @@ var CfgSolver = (function () {
 			return newGrammar;
 		};
 
-
+	
+		// Computes the set of all nonterminals in the grammars that derive the empty word
 		function nullable(grammar) {
 			var nullable = [];
 			var occurs = { };
 			var nonterminals = Object.keys(grammar);
-			for (var nt in nonterminals) {
-				occurs[nonterminals[nt]] = [];
+			for (var nonterminal in grammar) {
+				occurs[nonterminal] = [];
 			}
 			
 			for	(var nonterminal in grammar) {
 				for (var rhs in grammar[nonterminal]) {
 					var rhsText = grammar[nonterminal][rhs];
-					if (rhsText.length == 1 && 
-						nonterminals.contains(rhsText)) {
-							occurs[rhsText].push(nonterminal);
+					if (rhsText.length == 1 && grammar[rhsText]) {
+						occurs[rhsText].push(nonterminal);
 					}
 				}
 			}
@@ -172,8 +188,8 @@ var CfgSolver = (function () {
 				for (var rhs in grammar[nonterminal]) {
 					var rhsText = grammar[nonterminal][rhs];
 					if (rhsText.length == 2 && 
-						nonterminals.contains(rhsText[0]) &&
-						nonterminals.contains(rhsText[1])) {
+						grammar[rhsText[0]] &&
+						grammar[rhsText[1]]) {
 							occurs[rhsText[0]].push(nonterminal + rhsText[1]);
 							occurs[rhsText[1]].push(nonterminal + rhsText[0]);
 					}
@@ -247,6 +263,10 @@ var CfgSolver = (function () {
 				var starting = Object.keys(grammar)[0],
 					transformed = binTransform(grammar),
 					inverseUnitGraph = constructInverseUnitGraph(transformed);
+					
+				if (inverseUnitGraph[EPSILON] && inverseUnitGraph[EPSILON].contains(starting)) {
+					throw new CfgError("The empty word may not be derived from the start symbol!");
+				}
 				return {
 					starting: starting,
 					grammar: transformed,
@@ -349,6 +369,7 @@ var CfgSolver = (function () {
 		printer: printer,
 		preprocess: preprocessor.transform,
 		recognizeWord: recognizer.recognizeWord,		
+		epsilon: EPSILON,
 	}
 })();
 
