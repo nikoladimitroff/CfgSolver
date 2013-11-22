@@ -2,24 +2,42 @@
 <html>
 <head>
 	<script src="cfgSolver.js"></script>
+	<script src="sampleGrammars.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
 </head>
 <body>
 	<input type="text" id="textbox" />
-	<label id="label"/>
+	<label id="label">Write something on the left</label>
+	<div data-bind="foreach: grammars" >
+    <div>
+		<input type="radio" name="optionsGroup" data-bind="attr: {value: name}, checked: $root.selected" />
+		<span data-bind="text: name"></span>
+	</div>    
+</div>
 </body>
 <script>
-var grammar = {
-	"S": ["(S)", "E"],
-	"E": ["E*E", "E+E", "N"],
-	"N": ["NN", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+
+var viewmodel = {
+	grammars: testGrammars,
+	selected: ko.observable(testGrammars[0].name),
 };
 
-var transformed = CfgSolver.preprocess(grammar);
+viewmodel.current = ko.computed(function () {
+	for (var i = 0; i < testGrammars.length; i++) {
+		if (testGrammars[i].name == viewmodel.selected()) {
+			return testGrammars[i];
+		}
+	}
+	return null;
+});
+
 var input = document.getElementById("textbox");
 var resultLabel = document.getElementById("label");
-input.addEventListener("keydown", function () {
+input.addEventListener("keyup", function () {
 	if (input.value.length)
-		resultLabel.innerText = CfgSolver.recognizeWord(transformed, input.value);
+		resultLabel.innerText = CfgSolver.recognizeWord(viewmodel.current().transform, input.value);
 });
+
+ko.applyBindings(viewmodel);
 </script>
 </html>

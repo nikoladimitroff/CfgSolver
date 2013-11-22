@@ -271,13 +271,13 @@ var CfgSolver = (function () {
 					starting: starting,
 					grammar: transformed,
 					inverseUnitGraph: inverseUnitGraph,
-					print: printer.printGrammar(transformed),
 				}
 			},
 		}
 	})();
 	
 	var recognizer = (function () {
+		// The most usual dfs implementation you will ever see
 		function dfs(graph, root) {
 			if (!graph[root]) {
 				return [root];
@@ -303,6 +303,7 @@ var CfgSolver = (function () {
 			}
 			return visited;
 		}
+		// Computes the set of all vertices reachable from the given set of vertices in the given graph
 		function solveReachabilityInGraph(graph, set) {
 			// Go for a DFS, change the data structure to switch to BFS
 			var reachable = [];
@@ -317,6 +318,8 @@ var CfgSolver = (function () {
 			return reachable;
 		}
 
+		// Tries to accept the given word in the specified grammar, given its inverse unit graph and start symbol
+		// Direct implementation as given in the paper by Lange and Leiss
 		function tryAcceptWord(grammar, graph, startSymbol, word) {
 			table = [];
 			tablePrime = [];
@@ -360,6 +363,8 @@ var CfgSolver = (function () {
 		
 		return {
 			recognizeWord: function (pretransformedGrammar, word) {
+				if (word == "")
+					throw new CfgError("CYK doesn't work on empty strings");
 				return tryAcceptWord(pretransformedGrammar.grammar, pretransformedGrammar.inverseUnitGraph, pretransformedGrammar.starting, word);
 			},
 		};
