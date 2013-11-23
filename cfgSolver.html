@@ -4,14 +4,30 @@
 	<script src="cfgSolver.js"></script>
 	<script src="sampleGrammars.js"></script>
 	<script src="http://cdnjs.cloudflare.com/ajax/libs/knockout/2.3.0/knockout-min.js"></script>
+	<style>
+		.red {
+			border: 0.2em solid red;
+		}
+		.green {
+			border: 0.2em solid green;
+		}
+	</style>
 </head>
 <body>
-	<input type="text" id="textbox" />
+	<h2>CfgSolver Demo</h2>
+	<h3>Select one of the grammars below and write something in the input field, changes are reflected automatically (press ENTER in case they aren't)</h3>
+	<h4>Note that all generated text is in lower case!</h4>
+	<input type="text" id="textbox" value="" data-bind="css: { red: !($root.isWordAccepted()), green: $root.isWordAccepted() }" />
 	<label id="label">Write something on the left</label>
 	<div data-bind="foreach: grammars" >
     <div>
-		<input type="radio" name="optionsGroup" data-bind="attr: {value: name}, checked: $root.selected" />
-		<span data-bind="text: name"></span>
+		<input type="radio" name="optionsGroup" 
+			data-bind="attr: {value: name}, checked: $root.selected" />
+		<label data-bind="text: name"></label>
+		<span data-bind="visible: name == $root.current().name">
+			<label> - </label>
+			<label data-bind="text: description"></label>
+		</span>
 	</div>    
 </div>
 </body>
@@ -20,7 +36,18 @@
 var viewmodel = {
 	grammars: testGrammars,
 	selected: ko.observable(testGrammars[0].name),
+	isWordAccepted: ko.observable(false),
 };
+
+// Create a function that adds the computed, since we can't capture the grammar inside the loop
+var addFullTextComputed = function (grammar) {
+	grammar.fullText = ko.computed(function () {
+		return grammar.name + " - " + grammar.description;
+	});
+}
+for (var i = 0; i < viewmodel.grammars.length; i++) {
+	addFullTextComputed(viewmodel.grammars[i]);
+}
 
 viewmodel.current = ko.computed(function () {
 	for (var i = 0; i < testGrammars.length; i++) {
@@ -33,10 +60,13 @@ viewmodel.current = ko.computed(function () {
 
 var input = document.getElementById("textbox");
 var resultLabel = document.getElementById("label");
-input.addEventListener("keyup", function () {
+var validate = function () {
 	if (input.value.length)
-		resultLabel.innerText = CfgSolver.recognizeWord(viewmodel.current().transform, input.value);
-});
+		viewmodel.isWordAccepted(CfgSolver.recognizeWord(viewmodel.current().transform, input.value));
+}
+// Revalidate whenever the input or the selected grammar is changed
+viewmodel.current.subscribe(validate);
+input.addEventListener("keyup", validate);
 
 ko.applyBindings(viewmodel);
 </script>
